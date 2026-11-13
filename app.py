@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 import plotly.graph_objects as go
 import plotly.express as px
+import wandb
 
 # ==========================================
 # 1. PAGE CONFIGURATION
@@ -33,8 +34,16 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. SESSION STATE INITIALIZATION
+# 2. SESSION STATE & W&B INIT
 # ==========================================
+# Initialize W&B for Production Monitoring
+# We use a try/except block so the app works even if offline
+try:
+    if wandb.run is None:
+        wandb.init(project="nasa-shuttle-mlops", job_type="inference-monitor")
+except:
+    pass
+
 if 'history' not in st.session_state:
     st.session_state.history = []
 
@@ -119,7 +128,7 @@ if model is None:
     st.stop()
 
 # ==========================================
-# 6. ENHANCED SENSOR INPUT WITH PRESETS (FIXED)
+# 6. ENHANCED SENSOR INPUT WITH PRESETS
 # ==========================================
 st.markdown("---")
 st.header("📡 Telemetry Input Panel")
@@ -174,7 +183,7 @@ fig_sensors.update_layout(height=300, showlegend=False)
 st.plotly_chart(fig_sensors, use_container_width=True)
 
 # ==========================================
-# 7. PREDICTION LOGIC
+# 7. PREDICTION LOGIC & MONITORING
 # ==========================================
 st.markdown("---")
 col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 2])
@@ -183,14 +192,12 @@ with col_btn1:
 
 if run_diagnostics:
     
-    # CRITICAL FIX FOR OCSVM PIPELINE:
-    # The ColumnTransformer in the pipeline expects specific column names.
-    # We must convert the input list to a DataFrame with headers.
+    # Convert input to DataFrame for the Pipeline
     feature_names = ['A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9']
     input_data = pd.DataFrame([[s2, s3, s4, s5, s6, s7, s8, s9]], columns=feature_names)
     
     with st.spinner("🔄 Analyzing Sensor Patterns..."):
-        # Predict: Scikit-learn Anomaly Models return 1 for Inlier (Normal), -1 for Outlier (Anomaly)
+        # Predict: 1 = Normal, -1 = Anomaly
         prediction = model.predict(input_data)[0]
         
         # Decision Function Score
@@ -198,6 +205,23 @@ if run_diagnostics:
             score = model.decision_function(input_data)[0]
         except:
             score = 0.0
+        
+        # === MLOPS: LOG TO W&B ===
+        # This sends the data to your Dashboard for "Monitoring"
+        try:
+            wandb.log({
+                "sensor_inputs": {
+                    "A2": s2, "A3": s3, "A4": s4, "A5": s5, 
+                    "A6": s6, "A7": s7, "A8": s8, "A9": s9
+                },
+                "prediction_label": "Normal" if prediction == 1 else "Anomaly",
+                "anomaly_score": score,
+                "active_model": model_option,
+                "timestamp": datetime.now().isoformat()
+            })
+        except Exception as e:
+            print(f"W&B Logging Error: {e}")
+        # =========================
         
         # Update session state
         st.session_state.history.append({

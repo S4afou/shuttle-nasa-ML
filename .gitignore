@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.DS_Store
+Thumbs.db
+
+# W&B local runs
+wandb/
+.wandb/
+
+# generated data
+*.csv
