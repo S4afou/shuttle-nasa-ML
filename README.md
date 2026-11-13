@@ -1,9 +1,9 @@
 # NASA shuttle telemetry anomaly detection
 
-Unsupervised anomaly detection on NASA shuttle radiator telemetry, packaged as a Streamlit
-diagnostic panel. The detector is trained on the OpenML `shuttle` dataset (nine sensor
-channels, about 56,000 rows, seven classes collapsed to normal against anomaly) and then
-served from three pre-trained scikit-learn pipelines.
+I built this as a Streamlit diagnostic panel around an unsupervised anomaly detector for
+NASA shuttle radiator telemetry. The detector is trained on the OpenML `shuttle` dataset
+(nine sensor channels, about 56,000 rows, seven classes collapsed to normal against
+anomaly) and then served from three pre-trained scikit-learn pipelines.
 
 The models are the detection half. The lifecycle around them, including data versioning,
 sweeps, a model registry, drift monitoring and retraining, lives in
@@ -53,7 +53,7 @@ inference side.
 
 ## Why the pickles are committed
 
-The three pipelines are about 33 MB in total. They are committed on purpose: the app is a
+The three pipelines are about 33 MB in total. I committed them on purpose: the app is a
 demo, and a clone that runs without a training job is worth more than a tidy tree. If you
 would rather retrain, `train_mlops.py` fetches the data, trains the model and registers the
 artifact.
@@ -73,3 +73,6 @@ reports F1 rather than accuracy.
 
 Course and portfolio work. No licence is granted for reuse of the dataset, which follows
 the OpenML terms.
+
+More about this project on my portfolio:
+https://safouane-medjahri.vercel.app/projects/shuttle-anomaly-detection
